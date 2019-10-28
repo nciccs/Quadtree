@@ -1,9 +1,10 @@
 class Point
 {
-    constructor(x, y)
+    constructor(x, y, data=null)
     {
         this.x = x;
         this.y = y;
+        this.data = data;
     }
 }
 
@@ -15,24 +16,32 @@ class Rectangle
         this.y = y;
         this.w = w;
         this.h = h;
+
+        this.centerX = this.x + this.w/2;
+        this.centerY = this.y + this.h/2;
     }
 
     contains(point)
     {
         //return (this.x-this.w < point.x && point.x < this.x+this.w &&
         //    this.y-this.h < point.y && point.y < this.y+this.h);
-        return (this.x-this.w <= point.x && point.x <= this.x+this.w &&
-            this.y-this.h <= point.y && point.y <= this.y+this.h);
+        /*return (this.x-this.w <= point.x && point.x <= this.x+this.w &&
+            this.y-this.h <= point.y && point.y <= this.y+this.h);*/
+            return (this.x <= point.x && point.x <= this.x+this.w &&
+                this.y <= point.y && point.y <= this.y+this.h);
     }
 
     intersects(range)
     {
-        return !(range.x > this.x + this.w ||
-        range.x + range.w < this.x ||
-        range.y > this.y + this.h ||
-        range.y + range.h < this.y);
+        /*return !(range.x - range.w > this.x + this.w ||
+        range.x + range.w < this.x - this.w ||
+        range.y - range.y > this.y + this.h ||
+        range.y + range.h < this.y - this.h);*/
+        return !(range. x > this.x + this.w ||
+            range.x + range.w < this.x ||
+            range.y > this.y + this.h ||
+            range.y + range.h < this.y);
     }
-        
 }
 
 class Circle
@@ -101,9 +110,14 @@ class QuadTree
         let w = this.boundary.w;
         let h = this.boundary.h;
 
-        let nw = new Rectangle(x-w/2, y-h/2, w/2, h/2);
+        /*let nw = new Rectangle(x-w/2, y-h/2, w/2, h/2);
         let ne = new Rectangle(x+w/2, y-h/2, w/2, h/2);
         let sw = new Rectangle(x-w/2, y+h/2, w/2, h/2);
+        let se = new Rectangle(x+w/2, y+h/2, w/2, h/2);*/
+
+        let nw = new Rectangle(x, y, w/2, h/2);
+        let ne = new Rectangle(x+w/2, y, w/2, h/2);
+        let sw = new Rectangle(x, y+h/2, w/2, h/2);
         let se = new Rectangle(x+w/2, y+h/2, w/2, h/2);
 
         this.northwest = new QuadTree(nw, this.capacity);
@@ -116,9 +130,15 @@ class QuadTree
     {
         strokeWeight(1);
         noFill();
-        //stroke(255);
-        rectMode(CENTER);
-        rect(this.boundary.x, this.boundary.y, this.boundary.w*2, this.boundary.h*2);
+        //rectMode(CENTER);
+        //rect(this.boundary.x, this.boundary.y, this.boundary.w*2, this.boundary.h*2);
+        rect(this.boundary.x, this.boundary.y, this.boundary.w, this.boundary.h);
+        for(let p of this.points)
+        {
+            strokeWeight(4);
+            point(p.x, p.y)
+        }
+
         if(this.northwest != null)
         {
             this.northwest.show();
@@ -126,32 +146,96 @@ class QuadTree
             this.southwest.show();
             this.southeast.show();
         }
+    }
 
-        for(let p of this.points)
+    query(range)
+    {
+        let foundPoints = [];
+        this._query(range, foundPoints);
+        return foundPoints;
+    }
+
+    _query(range, foundPoints)
+    {
+        if(range.intersects(this.boundary))
         {
-            strokeWeight(4);
-            point(p.x, p.y)
+            for(let p of this.points)
+            {
+                if(range.contains(p))
+                {
+                    foundPoints.push(p);
+                }
+            }
+        }
+
+        if(this.northwest != null)
+        {
+            this.northwest._query(range, foundPoints);
+            this.northeast._query(range, foundPoints);
+            this.southwest._query(range, foundPoints);
+            this.southeast._query(range, foundPoints);
         }
     }
+
+    getAllPoints()
+    {
+        let allPoints = [];
+
+        this._getAllPoints(allPoints);
+
+        return allPoints;
+    }
+
+    _getAllPoints(allPoints)
+    {
+        [].push.apply(allPoints, this.points.slice());
+
+        if(this.northwest != null)
+        {
+            this.northwest._getAllPoints(allPoints);
+            this.northeast._getAllPoints(allPoints);
+            this.southwest._getAllPoints(allPoints);
+            this.southeast._getAllPoints(allPoints);
+        }
+    }
+
 }
 
 let canvasWidth = 480;
 let canvasHeight = 300;
-let boundary = new Rectangle(canvasWidth/2, canvasHeight/2, canvasWidth/2, canvasHeight/2);
+//let boundary = new Rectangle(canvasWidth/2, canvasHeight/2, canvasWidth/2, canvasHeight/2);
+let boundary = new Rectangle(0, 0, canvasWidth, canvasHeight);
 let qt = new QuadTree(boundary, 4);
-console.log(qt);
+//console.log(qt);
+let rectangle =  new Rectangle(0, 0, canvasWidth/4, canvasHeight/4);
 
 function setup()
 {
     // put setup code here
-    //createCanvas(640, 480);
     createCanvas(canvasWidth, canvasHeight);
-    //createCanvas(300, 300);
-    /*for(let i = 0; i < 500; i++)
+
+    /*for(let i = 0; i < 15; i++)
     {
-        qt.insert(new Point(random(width), random(height)));
+        //qt.insert(new Point(random(width), random(height)));
+        let p = new Point(5+i*30, 50);
+        console.log(i + " " + p);
+        qt.insert(p);
     }*/
+
+    /*for(let i = 0; i < 5; i++)
+    {
+        //qt.insert(new Point(random(width), random(height)));
+        let p = new Point(random(width), random(height));
+        //p = new Point(5+i*30, 50);
+        console.log(i + " " + p);
+        qt.insert(p);
+    }*/
+
+    //console.log(qt.query(new Rectangle(width/2, height/2, width/2, height/2)));
+    //rectangle = new Rectangle(width/2, height/2/2, width/2/2, height/2/2);
+    //console.log(qt.getAllPoints());
 }
+
 /*
 function mouseClicked()
 {
@@ -171,4 +255,47 @@ function draw()
     //background(0);
     background(135, 206, 235);
     qt.show();
+
+    rectangle.x = mouseX - rectangle.w / 2;
+    rectangle.y = mouseY - rectangle.h / 2;
+    push();
+    //rectMode(CENTER);
+    stroke("RED");
+    strokeWeight(2);
+    noFill();
+    rect(rectangle.x, rectangle.y, rectangle.w, rectangle.h);
+    pop();
+
+    let points = qt.query(rectangle);
+    //console.log(points);
+    for(let p of points)
+    {
+        push();
+        stroke("RED");
+        strokeWeight(4);
+        point(p.x, p.y);
+        pop();
+    }
+
+    push();
+    //stroke("RED");
+    fill(250);
+    textSize(20);
+    //textAlign(CENTER, CENTER);
+    //text("Count " + points.length, mouseX, rectangle.y+rectangle.h+15);
+    text("Count " + points.length, 10, 25);
+    pop();
+}
+
+function mouseWheel(event)
+{
+    let change = event.delta / Math.abs(event.delta) * 0.25;
+    let newWidth = rectangle.w - change * rectangle.w;
+    let newHeight = rectangle.h - change * rectangle.h;
+
+    if(newWidth > 0 && newHeight > 0)
+    {
+        rectangle.w = newWidth;
+        rectangle.h = newHeight;
+    }
 }
