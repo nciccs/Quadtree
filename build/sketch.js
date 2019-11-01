@@ -62,7 +62,27 @@ class Circle
 
     intersects(range)
     {
+        let distX = Math.abs(this.x - (range.x + range.w / 2));
+        let distY = Math.abs(this.y - (range.y + range.h / 2));
 
+        let isIntersecting = false;
+
+        //intersecting if distance between centres is within rect's half width or height
+        if(distX <= (range.w/2) || distY <= (range.h/2))
+        {
+            isIntersecting = true;
+        }
+        else
+        {
+            let dx = distX - range.w/2;
+            let dy = distY - range.h/2;
+            if(dx*dx + dy*dy <= (circle.r*circle.r))
+            {
+                isIntersecting = true;
+            }
+        }
+
+        return isIntersecting;
     }
 }
 
@@ -207,7 +227,8 @@ let canvasHeight = 300;
 let boundary = new Rectangle(0, 0, canvasWidth, canvasHeight);
 let qt = new QuadTree(boundary, 4);
 //console.log(qt);
-let rectangle =  new Rectangle(0, 0, canvasWidth/4, canvasHeight/4);
+//let rectangle =  new Rectangle(0, 0, canvasWidth/4, canvasHeight/4);
+let circle = new Circle(0, 0, 50);
 
 function setup()
 {
@@ -256,17 +277,22 @@ function draw()
     background(135, 206, 235);
     qt.show();
 
-    rectangle.x = mouseX - rectangle.w / 2;
-    rectangle.y = mouseY - rectangle.h / 2;
+    //rectangle.x = mouseX - rectangle.w / 2;
+    //rectangle.y = mouseY - rectangle.h / 2;
+    circle.x = mouseX;
+    circle.y = mouseY;
+
     push();
     //rectMode(CENTER);
     stroke("RED");
     strokeWeight(2);
     noFill();
-    rect(rectangle.x, rectangle.y, rectangle.w, rectangle.h);
+    //rect(rectangle.x, rectangle.y, rectangle.w, rectangle.h);
+    ellipse(circle.x, circle.y, circle.r*2);
     pop();
 
-    let points = qt.query(rectangle);
+    //let points = qt.query(rectangle);
+    let points = qt.query(circle);
     //console.log(points);
     for(let p of points)
     {
@@ -290,12 +316,17 @@ function draw()
 function mouseWheel(event)
 {
     let change = event.delta / Math.abs(event.delta) * 0.25;
-    let newWidth = rectangle.w - change * rectangle.w;
+    let newRadius = circle.r - change * circle.r;
+    if(newRadius > 0.5)
+    {
+        circle.r = newRadius;
+    }
+    /*let newWidth = rectangle.w - change * rectangle.w;
     let newHeight = rectangle.h - change * rectangle.h;
 
     if(newWidth > 0 && newHeight > 0)
     {
         rectangle.w = newWidth;
         rectangle.h = newHeight;
-    }
+    }*/
 }
