@@ -317,7 +317,7 @@ function mouseWheel(event)
 {
     let change = event.delta / Math.abs(event.delta) * 0.25;
     let newRadius = circle.r - change * circle.r;
-    if(newRadius > 0.5)
+    if(newRadius > 0.5 && newRadius <= Math.max(width/2, height/2))
     {
         circle.r = newRadius;
     }
